@@ -1,0 +1,10 @@
+export { Home } from "./Home";
+export { HowItWorks } from "./HowItWorks";
+export { AboutUs } from "./AboutUs";
+export { Pricing } from "./Pricing";
+export { Contact } from "./Contact";
+export { Dashboard } from "./Dashboard";
+export { Login } from "./Login";
+export { Signup } from "./Signup";
+export { Profile } from "./Profile";
+export { Analytics } from "./Analytics";
