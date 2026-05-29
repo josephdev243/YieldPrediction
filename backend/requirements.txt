@@ -1,6 +1,6 @@
 Django==5.0.1
 djangorestframework==3.14.0
-djangorestframework-simplejwt==5.3.2
+djangorestframework-simplejwt==5.5.1
 django-allauth==0.57.0
 django-cors-headers==4.3.1
 django-environ==0.11.2
@@ -17,7 +17,7 @@ python-decouple==3.8
 Pillow==10.1.0
 django-storages==1.14.2
 boto3==1.34.1
-Twilio==9.0.2
+africastalking
 django-anymail==10.1
 gunicorn==21.2.0
 python-dotenv==1.0.0

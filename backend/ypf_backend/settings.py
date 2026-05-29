@@ -30,7 +30,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_filters',
-    'django_allauth',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -50,6 +49,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -78,8 +78,8 @@ WSGI_APPLICATION = 'ypf_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': env('DB_ENGINE', default='django.contrib.gis.db.backends.postgis'),
-        'NAME': env('DB_NAME', default='ypf_db'),
-        'USER': env('DB_USER', default='postgres'),
+        'NAME': env('DB_NAME', default='yieldprediction_db'),
+        'USER': env('DB_USER', default='joseph'),
         'PASSWORD': env('DB_PASSWORD', default=''),
         'HOST': env('DB_HOST', default='localhost'),
         'PORT': env('DB_PORT', default='5432'),
@@ -164,9 +164,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 # External APIs
 OPENWEATHER_API_KEY = env('OPENWEATHER_API_KEY', default='')
-TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID', default='')
-TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN', default='')
-TWILIO_PHONE_NUMBER = env('TWILIO_PHONE_NUMBER', default='')
+AFRICAS_TALKING_API_KEY = env('AFRICAS_TALKING_API_KEY', default='')
+AFRICAS_TALKING_USERNAME = env('AFRICAS_TALKING_USERNAME', default='')
 
 # Email Configuration
 EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')

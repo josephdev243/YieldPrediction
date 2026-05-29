@@ -4,14 +4,16 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
 from django.db.models import Q, Count, Sum, Avg
+from datetime import date
 from ypf_backend.farms.models import (
     Farm, Field, Crop, CropPlanting, YieldRecord, WeatherData, 
-    YieldPrediction, Recommendation
+    YieldPrediction, Recommendation, InputUsage, PestDiseaseAlert
 )
 from ypf_backend.api.serializers import (
     UserSerializer, UserRegistrationSerializer, FarmSerializer, FieldSerializer,
     CropSerializer, CropPlantingSerializer, YieldRecordSerializer, WeatherDataSerializer,
-    YieldPredictionSerializer, RecommendationSerializer, FarmDashboardSerializer
+    YieldPredictionSerializer, RecommendationSerializer, FarmDashboardSerializer,
+    InputUsageSerializer, PestDiseaseAlertSerializer
 )
 
 User = get_user_model()
@@ -202,3 +204,264 @@ class RecommendationViewSet(viewsets.ModelViewSet):
         recommendation.is_read = True
         recommendation.save()
         return Response({'status': 'marked as read'})
+
+
+class InputUsageViewSet(viewsets.ModelViewSet):
+    """Input usage tracking endpoints."""
+    queryset = InputUsage.objects.all()
+    serializer_class = InputUsageSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ['field', 'resource_type', 'season', 'season_year', 'unit']
+    search_fields = ['field__name', 'field__farm__name', 'notes', 'season']
+    ordering = ['-application_date', '-created_at']
+
+    def get_queryset(self):
+        return InputUsage.objects.filter(
+            field__farm__user=self.request.user
+        ).select_related('field', 'field__farm')
+
+    @action(detail=False, methods=['get'])
+    def seasonal_summary(self, request):
+        """Summarize input usage by resource type for a season."""
+        queryset = self.get_queryset()
+        field_id = request.query_params.get('field_id')
+        season = request.query_params.get('season')
+        season_year = request.query_params.get('season_year')
+
+        if field_id:
+            queryset = queryset.filter(field_id=field_id)
+        if season:
+            queryset = queryset.filter(season=season)
+        if season_year:
+            queryset = queryset.filter(season_year=season_year)
+
+        summary_by_resource = (
+            queryset.values('resource_type')
+            .annotate(
+                total_quantity=Sum('quantity'),
+                total_cost=Sum('cost'),
+                entries=Count('id')
+            )
+            .order_by('resource_type')
+        )
+
+        return Response({
+            'filters': {
+                'field_id': field_id,
+                'season': season,
+                'season_year': season_year,
+            },
+            'summary': summary_by_resource,
+            'totals': {
+                'entries': queryset.count(),
+                'quantity': queryset.aggregate(total=Sum('quantity'))['total'] or 0,
+                'cost': queryset.aggregate(total=Sum('cost'))['total'] or 0,
+            }
+        })
+
+
+class PestDiseaseAlertViewSet(viewsets.ModelViewSet):
+    """Actionable pest and disease alerts for farmers."""
+    queryset = PestDiseaseAlert.objects.all()
+    serializer_class = PestDiseaseAlertSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ['farm', 'field', 'crop', 'alert_type', 'risk_level', 'is_acknowledged']
+    search_fields = ['title', 'description', 'field__name', 'crop__name', 'season']
+    ordering = ['-risk_score', '-created_at']
+
+    def get_queryset(self):
+        return PestDiseaseAlert.objects.filter(
+            farm__user=self.request.user
+        ).select_related('farm', 'field', 'crop')
+
+    def _season_label(self, weather_date):
+        if not weather_date:
+            return ''
+        month = weather_date.month
+        if month in (3, 4, 5):
+            return 'Long Rains'
+        if month in (10, 11, 12):
+            return 'Short Rains'
+        return 'Dry Season'
+
+    def _crop_risk_profile(self, crop):
+        crop_name = (crop.name or '').lower()
+
+        if any(keyword in crop_name for keyword in ('rice', 'leafy', 'vegetable', 'tomato', 'potato')):
+            return {
+                'fungal_bonus': 12,
+                'disease_bonus': 10,
+                'pest_bonus': 4,
+            }
+
+        if any(keyword in crop_name for keyword in ('bean', 'pea', 'soy', 'groundnut')):
+            return {
+                'fungal_bonus': 8,
+                'disease_bonus': 10,
+                'pest_bonus': 6,
+            }
+
+        if any(keyword in crop_name for keyword in ('maize', 'corn', 'sorghum', 'millet', 'cassava')):
+            return {
+                'fungal_bonus': 6,
+                'disease_bonus': 6,
+                'pest_bonus': 12,
+            }
+
+        return {
+            'fungal_bonus': 5,
+            'disease_bonus': 5,
+            'pest_bonus': 5,
+        }
+
+    def _classify_alert(self, field, crop, weather):
+        humidity = weather.humidity_percent if weather else (field.moisture_level or 0)
+        rainfall = weather.rainfall_mm if weather else 0
+        temperature = weather.temperature_max if weather else 0
+        moisture = field.moisture_level or 0
+        season = self._season_label(weather.date if weather else None)
+        crop_risk = self._crop_risk_profile(crop)
+        wet_season = season in ('Long Rains', 'Short Rains')
+
+        fungal_risk = humidity >= (80 - min(crop_risk['fungal_bonus'] // 3, 6)) and rainfall >= (12 - min(crop_risk['fungal_bonus'] // 2, 6))
+        fungal_risk = fungal_risk and 18 <= temperature <= 30 and wet_season
+
+        if fungal_risk:
+            return {
+                'alert_type': PestDiseaseAlert.ALERT_FUNGAL,
+                'risk_level': PestDiseaseAlert.RISK_CRITICAL if humidity >= 90 else PestDiseaseAlert.RISK_HIGH,
+                'title': f"Fungal pressure rising in {field.name}",
+                'description': (
+                    f"{season or 'Current'} conditions are favoring fungal spread in {crop.name}. "
+                    f"High humidity and rainfall increase infection pressure, so scout leaf surfaces and tighten canopy airflow."
+                ),
+            }
+
+        disease_risk = humidity >= (72 - min(crop_risk['disease_bonus'] // 3, 5)) and rainfall >= 8
+        disease_risk = disease_risk and (wet_season or moisture >= 35)
+
+        if disease_risk:
+            return {
+                'alert_type': PestDiseaseAlert.ALERT_DISEASE,
+                'risk_level': PestDiseaseAlert.RISK_HIGH if moisture >= 40 else PestDiseaseAlert.RISK_MEDIUM,
+                'title': f"Disease watch for {crop.name}",
+                'description': (
+                    f"{season or 'Seasonal'} moisture and humidity indicate elevated disease pressure on {field.name}. "
+                    f"Check leaf spots, blight symptoms, and canopy airflow before symptoms expand."
+                ),
+            }
+
+        pest_risk = temperature >= 28 and humidity <= (58 - min(crop_risk['pest_bonus'] // 4, 8)) and moisture <= 35
+        pest_risk = pest_risk or (not wet_season and temperature >= 30 and moisture <= 40)
+
+        if pest_risk:
+            return {
+                'alert_type': PestDiseaseAlert.ALERT_PEST,
+                'risk_level': PestDiseaseAlert.RISK_HIGH if moisture <= 25 else PestDiseaseAlert.RISK_MEDIUM,
+                'title': f"Pest pressure risk on {field.name}",
+                'description': (
+                    f"Hot, drier conditions can increase pest activity for {crop.name}, especially outside the main rains. "
+                    f"Inspect stems and undersides of leaves and plan targeted control if needed."
+                ),
+            }
+
+        return None
+
+    def _generate_for_farm(self, farm):
+        weather = WeatherData.objects.filter(farm=farm).order_by('-date').first()
+        plantings = CropPlanting.objects.filter(
+            field__farm=farm,
+            status__in=['planned', 'growing']
+        ).select_related('field', 'crop')
+
+        created_alerts = []
+        for planting in plantings:
+            alert_data = self._classify_alert(planting.field, planting.crop, weather)
+            if not alert_data:
+                continue
+
+            humidity = weather.humidity_percent if weather else (planting.field.moisture_level or 0)
+            rainfall = weather.rainfall_mm if weather else 0
+            temperature = weather.temperature_max if weather else 0
+            season = self._season_label(weather.date if weather else None)
+
+            risk_score = min(
+                100,
+                round(
+                    (humidity * 0.35)
+                    + (rainfall * 2.0)
+                    + max(0, 32 - abs(24 - temperature)) * 1.5
+                    + max(0, 60 - (planting.field.moisture_level or 0)) * 0.8,
+                    0,
+                ),
+            )
+
+            alert, _ = PestDiseaseAlert.objects.update_or_create(
+                farm=farm,
+                field=planting.field,
+                crop=planting.crop,
+                alert_type=alert_data['alert_type'],
+                triggered_weather_date=weather.date if weather else None,
+                defaults={
+                    'risk_level': alert_data['risk_level'],
+                    'title': alert_data['title'],
+                    'description': alert_data['description'],
+                    'season': season,
+                    'rainfall_mm': rainfall,
+                    'humidity_percent': humidity,
+                    'temperature_c': temperature,
+                    'risk_score': risk_score,
+                    'is_acknowledged': False,
+                },
+            )
+            created_alerts.append(alert)
+
+        return created_alerts
+
+    def _farm_scope(self, request, farm_id=None):
+        farms = Farm.objects.filter(user=request.user)
+        if farm_id:
+            farms = farms.filter(id=farm_id)
+        return farms
+
+    @action(detail=False, methods=['get'])
+    def feed(self, request):
+        """Return the current alert feed for the authenticated farmer."""
+        farm_id = request.query_params.get('farm_id')
+        farms = self._farm_scope(request, farm_id=farm_id)
+
+        for farm in farms:
+            self._generate_for_farm(farm)
+
+        queryset = self.get_queryset().filter(farm__in=farms)
+
+        serializer = self.get_serializer(queryset[:20], many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def generate(self, request):
+        """Generate alerts from current farm weather and crop context."""
+        farm_id = request.data.get('farm_id') or request.query_params.get('farm_id')
+        farms = self._farm_scope(request, farm_id=farm_id)
+
+        if not farms.exists():
+            if farm_id:
+                return Response({'error': 'Farm not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'No farm found for authenticated user'}, status=status.HTTP_404_NOT_FOUND)
+
+        alerts = []
+        for farm in farms:
+            alerts.extend(self._generate_for_farm(farm))
+
+        return Response({
+            'generated': len(alerts),
+            'alerts': self.get_serializer(alerts, many=True).data,
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def acknowledge(self, request, pk=None):
+        """Mark an alert as acknowledged."""
+        alert = self.get_object()
+        alert.is_acknowledged = True
+        alert.save(update_fields=['is_acknowledged', 'updated_at'])
+        return Response({'status': 'acknowledged'})

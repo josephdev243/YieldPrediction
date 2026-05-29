@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from ypf_backend.farms.models import (
     Farm, Field, Crop, CropPlanting, YieldRecord, WeatherData, 
-    YieldPrediction, Recommendation
+    YieldPrediction, Recommendation, InputUsage, PestDiseaseAlert
 )
 
 User = get_user_model()
@@ -17,6 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=False, allow_blank=True, write_only=True)
     password = serializers.CharField(write_only=True, min_length=6)
     password_confirm = serializers.CharField(write_only=True, min_length=6)
     
@@ -31,7 +32,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
+        username = validated_data.pop('username', '') or validated_data['email']
+        user = User.objects.create_user(username=username, **validated_data)
         return user
 
 
@@ -67,7 +69,7 @@ class YieldRecordSerializer(serializers.ModelSerializer):
 
 class CropPlantingSerializer(serializers.ModelSerializer):
     crop_details = CropSerializer(source='crop', read_only=True)
-    yield_info = YieldRecordSerializer(source='yield', read_only=True)
+    yield_info = YieldRecordSerializer(source='planting_yields', read_only=True)
     
     class Meta:
         model = CropPlanting
@@ -83,7 +85,7 @@ class FieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = Field
         fields = ['id', 'farm', 'name', 'area_hectares', 'boundary', 'soil_ph',
-                  'moisture_level', 'plantings', 'created_at']
+                  'moisture_level', 'nutrient_content', 'plantings', 'created_at']
         read_only_fields = ['id', 'created_at']
 
 
@@ -106,6 +108,35 @@ class RecommendationSerializer(serializers.ModelSerializer):
         fields = ['id', 'farm', 'category', 'title', 'description', 'priority',
                   'action_required_by', 'is_read', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+
+class InputUsageSerializer(serializers.ModelSerializer):
+    field_name = serializers.CharField(source='field.name', read_only=True)
+
+    class Meta:
+        model = InputUsage
+        fields = [
+            'id', 'field', 'field_name', 'season', 'season_year', 'resource_type',
+            'quantity', 'unit', 'cost', 'application_date', 'notes',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'field_name', 'created_at', 'updated_at']
+
+
+class PestDiseaseAlertSerializer(serializers.ModelSerializer):
+    field_name = serializers.CharField(source='field.name', read_only=True)
+    crop_name = serializers.CharField(source='crop.name', read_only=True)
+
+    class Meta:
+        model = PestDiseaseAlert
+        fields = [
+            'id', 'farm', 'field', 'field_name', 'crop', 'crop_name',
+            'alert_type', 'risk_level', 'title', 'description', 'season',
+            'triggered_weather_date', 'rainfall_mm', 'humidity_percent',
+            'temperature_c', 'risk_score', 'is_acknowledged', 'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['id', 'field_name', 'crop_name', 'created_at', 'updated_at']
 
 
 class FarmDashboardSerializer(serializers.Serializer):

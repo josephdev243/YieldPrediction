@@ -6,7 +6,8 @@ from rest_framework_simplejwt.views import (
 from ypf_backend.api.views import (
     UserViewSet, FarmViewSet, FieldViewSet, CropViewSet,
     CropPlantingViewSet, YieldRecordViewSet, WeatherDataViewSet,
-    YieldPredictionViewSet, RecommendationViewSet
+    YieldPredictionViewSet, RecommendationViewSet, InputUsageViewSet,
+    PestDiseaseAlertViewSet
 )
 
 router = DefaultRouter()
@@ -19,6 +20,8 @@ router.register(r'yields', YieldRecordViewSet, basename='yield')
 router.register(r'weather', WeatherDataViewSet, basename='weather')
 router.register(r'predictions', YieldPredictionViewSet, basename='prediction')
 router.register(r'recommendations', RecommendationViewSet, basename='recommendation')
+router.register(r'input-usages', InputUsageViewSet, basename='input-usage')
+router.register(r'pest-alerts', PestDiseaseAlertViewSet, basename='pest-alert')
 
 urlpatterns = [
     # JWT Token endpoints

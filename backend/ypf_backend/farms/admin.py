@@ -1,23 +1,8 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.contrib.auth import get_user_model
 from ypf_backend.farms.models import (
     Farm, Field, Crop, CropPlanting, YieldRecord, WeatherData, 
-    YieldPrediction, Recommendation
+    YieldPrediction, Recommendation, InputUsage, PestDiseaseAlert
 )
-
-User = get_user_model()
-
-
-@admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    list_display = ('username', 'email', 'first_name', 'last_name', 'role', 'created_at')
-    list_filter = ('role', 'created_at')
-    fieldsets = BaseUserAdmin.fieldsets + (
-        ('Agricultural Info', {
-            'fields': ('role', 'phone_number', 'location', 'profile_picture', 'bio')
-        }),
-    )
 
 
 @admin.register(Farm)
@@ -30,7 +15,7 @@ class FarmAdmin(admin.ModelAdmin):
 
 @admin.register(Field)
 class FieldAdmin(admin.ModelAdmin):
-    list_display = ('name', 'farm', 'area_hectares', 'soil_type', 'created_at')
+    list_display = ('name', 'farm', 'area_hectares', 'soil_type', 'soil_ph', 'moisture_level', 'nutrient_content', 'created_at')
     list_filter = ('farm', 'created_at')
     search_fields = ('name', 'farm__name')
 
@@ -74,4 +59,26 @@ class RecommendationAdmin(admin.ModelAdmin):
     list_display = ('title', 'farm', 'category', 'priority', 'is_read', 'created_at')
     list_filter = ('category', 'priority', 'is_read', 'created_at')
     search_fields = ('title', 'farm__name')
+    readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(InputUsage)
+class InputUsageAdmin(admin.ModelAdmin):
+    list_display = (
+        'field', 'resource_type', 'quantity', 'unit', 'season',
+        'season_year', 'application_date'
+    )
+    list_filter = ('resource_type', 'season', 'season_year', 'application_date')
+    search_fields = ('field__name', 'field__farm__name', 'notes')
+    readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(PestDiseaseAlert)
+class PestDiseaseAlertAdmin(admin.ModelAdmin):
+    list_display = (
+        'title', 'farm', 'field', 'crop', 'alert_type', 'risk_level',
+        'risk_score', 'is_acknowledged', 'created_at'
+    )
+    list_filter = ('alert_type', 'risk_level', 'is_acknowledged', 'created_at')
+    search_fields = ('title', 'description', 'farm__name', 'field__name', 'crop__name')
     readonly_fields = ('created_at', 'updated_at')

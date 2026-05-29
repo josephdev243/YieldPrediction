@@ -33,8 +33,15 @@ class Field(models.Model):
     boundary = models.PolygonField(geography=True, null=True, blank=True)  # Field boundary polygon
     soil_ph = models.FloatField(null=True, blank=True, validators=[MinValueValidator(4.0), MaxValueValidator(9.0)])
     moisture_level = models.FloatField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    nutrient_content = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text='Nutrient content score (%)'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    soil_type = models.CharField(max_length=100)
     
     class Meta:
         verbose_name = 'Field'
@@ -90,7 +97,7 @@ class CropPlanting(models.Model):
 
 class YieldRecord(models.Model):
     """YieldRecord model - tracks harvest yields."""
-    planting = models.OneToOneField(CropPlanting, on_delete=models.CASCADE, related_name='yield')
+    planting = models.OneToOneField(CropPlanting, on_delete=models.CASCADE, related_name='planting_yields')
     harvest_date = models.DateField()
     quantity_harvested_kg = models.FloatField(validators=[MinValueValidator(0)])
     yield_per_hectare = models.FloatField(validators=[MinValueValidator(0)], help_text="kg/hectare")
@@ -179,3 +186,111 @@ class Recommendation(models.Model):
     
     def __str__(self):
         return f"{self.category.upper()}: {self.title}"
+
+
+class InputUsage(models.Model):
+    """Tracks farming inputs used per field and season."""
+    RESOURCE_FERTILIZER = 'fertilizer'
+    RESOURCE_PESTICIDE = 'pesticide'
+    RESOURCE_WATER = 'water'
+    RESOURCE_SEED = 'seed'
+
+    UNIT_KG = 'kg'
+    UNIT_LITERS = 'liters'
+    UNIT_BAGS = 'bags'
+    UNIT_CUBIC_METERS = 'm3'
+
+    RESOURCE_CHOICES = [
+        (RESOURCE_FERTILIZER, 'Fertilizer'),
+        (RESOURCE_PESTICIDE, 'Pesticide'),
+        (RESOURCE_WATER, 'Water'),
+        (RESOURCE_SEED, 'Seed'),
+    ]
+
+    UNIT_CHOICES = [
+        (UNIT_KG, 'Kilograms (kg)'),
+        (UNIT_LITERS, 'Liters'),
+        (UNIT_BAGS, 'Bags'),
+        (UNIT_CUBIC_METERS, 'Cubic meters (m3)'),
+    ]
+
+    field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='input_usages')
+    season = models.CharField(max_length=50, help_text='e.g. Long Rains, Dry Season')
+    season_year = models.PositiveIntegerField()
+    resource_type = models.CharField(max_length=20, choices=RESOURCE_CHOICES)
+    quantity = models.FloatField(validators=[MinValueValidator(0.0)])
+    unit = models.CharField(max_length=20, choices=UNIT_CHOICES)
+    cost = models.FloatField(validators=[MinValueValidator(0.0)], null=True, blank=True)
+    application_date = models.DateField()
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Input Usage'
+        verbose_name_plural = 'Input Usages'
+        ordering = ['-application_date', '-created_at']
+        indexes = [
+            models.Index(fields=['field', 'season_year', 'season']),
+            models.Index(fields=['resource_type']),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.get_resource_type_display()} - {self.field.name} "
+            f"({self.season} {self.season_year})"
+        )
+
+
+class PestDiseaseAlert(models.Model):
+    """Actionable pest and disease alert generated from weather and crop context."""
+    ALERT_FUNGAL = 'fungal'
+    ALERT_DISEASE = 'disease'
+    ALERT_PEST = 'pest'
+
+    RISK_LOW = 'low'
+    RISK_MEDIUM = 'medium'
+    RISK_HIGH = 'high'
+    RISK_CRITICAL = 'critical'
+
+    ALERT_TYPE_CHOICES = [
+        (ALERT_FUNGAL, 'Fungal Risk'),
+        (ALERT_DISEASE, 'Disease Risk'),
+        (ALERT_PEST, 'Pest Pressure'),
+    ]
+
+    RISK_LEVEL_CHOICES = [
+        (RISK_LOW, 'Low'),
+        (RISK_MEDIUM, 'Medium'),
+        (RISK_HIGH, 'High'),
+        (RISK_CRITICAL, 'Critical'),
+    ]
+
+    farm = models.ForeignKey(Farm, on_delete=models.CASCADE, related_name='pest_disease_alerts')
+    field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='pest_disease_alerts')
+    crop = models.ForeignKey(Crop, on_delete=models.CASCADE, related_name='pest_disease_alerts')
+    alert_type = models.CharField(max_length=20, choices=ALERT_TYPE_CHOICES)
+    risk_level = models.CharField(max_length=20, choices=RISK_LEVEL_CHOICES)
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    season = models.CharField(max_length=50, blank=True)
+    triggered_weather_date = models.DateField(null=True, blank=True)
+    rainfall_mm = models.FloatField(default=0)
+    humidity_percent = models.IntegerField(default=0)
+    temperature_c = models.FloatField(default=0)
+    risk_score = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(100)])
+    is_acknowledged = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Pest Disease Alert'
+        verbose_name_plural = 'Pest Disease Alerts'
+        ordering = ['-risk_score', '-created_at']
+        indexes = [
+            models.Index(fields=['farm', 'is_acknowledged', 'risk_level']),
+            models.Index(fields=['alert_type', 'risk_level']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_alert_type_display()} - {self.crop.name} ({self.risk_level})"
