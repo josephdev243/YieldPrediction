@@ -79,9 +79,9 @@ DATABASES = {
     'default': {
         'ENGINE': env('DB_ENGINE', default='django.contrib.gis.db.backends.postgis'),
         'NAME': env('DB_NAME', default='yieldprediction_db'),
-        'USER': env('DB_USER', default='joseph'),
+        'USER': env('DB_USER', default='postgres'),
         'PASSWORD': env('DB_PASSWORD', default=''),
-        'HOST': env('DB_HOST', default='localhost'),
+        'HOST': env('DB_HOST', default='postgis'),
         'PORT': env('DB_PORT', default='5432'),
     }
 }

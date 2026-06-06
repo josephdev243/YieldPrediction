@@ -2,13 +2,13 @@ services:
   postgis:
     image: postgis/postgis:16-3.5
     environment:
-      POSTGRES_DB: ypf_db
+      POSTGRES_DB: yieldprediction_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
   redis:
     image: redis:7-alpine
@@ -27,6 +27,9 @@ services:
     environment:
       - DEBUG=True
       - DB_HOST=postgis
+      - DB_NAME=yieldprediction_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
       - CELERY_BROKER_URL=redis://redis:6379/0
     depends_on:
       - postgis
@@ -40,6 +43,9 @@ services:
     environment:
       - DEBUG=True
       - DB_HOST=postgis
+      - DB_NAME=yieldprediction_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
       - CELERY_BROKER_URL=redis://redis:6379/0
     depends_on:
       - postgis
@@ -53,6 +59,9 @@ services:
     environment:
       - DEBUG=True
       - DB_HOST=postgis
+      - DB_NAME=yieldprediction_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
       - CELERY_BROKER_URL=redis://redis:6379/0
     depends_on:
       - postgis
