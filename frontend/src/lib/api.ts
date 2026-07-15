@@ -1,31 +1,78 @@
-import { API_BASE_URL, API_TIMEOUT, STORAGE_KEYS } from "./constants";
+import axios from "axios";
+import { API_BASE_URL, API_TIMEOUT } from "./constants";
 import type { ApiResponse } from "./types";
 
+let inMemoryAccessToken: string | null = null;
+let refreshPromise: Promise<string | null> | null = null;
+
+const axiosClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT,
+  withCredentials: true,
+});
+
+export const setAccessToken = (token: string | null): void => {
+  inMemoryAccessToken = token;
+};
+
+export const getAccessToken = (): string | null => inMemoryAccessToken;
+
+const refreshAccessToken = async (): Promise<string | null> => {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post(`${API_BASE_URL}/auth/token/refresh/`, {}, { withCredentials: true })
+      .then((response) => {
+        const token = response.data?.access || null;
+        setAccessToken(token);
+        return token;
+      })
+      .catch(() => {
+        setAccessToken(null);
+        return null;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+};
+
+axiosClient.interceptors.request.use((config) => {
+  if (inMemoryAccessToken) {
+    config.headers.Authorization = `Bearer ${inMemoryAccessToken}`;
+  }
+  return config;
+});
+
+axiosClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error?.config;
+    const status = error?.response?.status;
+
+    if (status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refreshedToken = await refreshAccessToken();
+      if (refreshedToken) {
+        originalRequest.headers.Authorization = `Bearer ${refreshedToken}`;
+        return axiosClient(originalRequest);
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
+
 /**
- * Custom fetch wrapper with timeout and error handling
+ * Kept for backward compatibility with existing auth service calls.
  */
 export const fetchWithTimeout = async (
   url: string,
   options: RequestInit = {},
   timeout: number = API_TIMEOUT,
 ): Promise<Response> => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === "AbortError") {
-      throw new Error(`Request timeout after ${timeout}ms`);
-    }
-    throw error;
-  }
+  return fetch(url, { ...options, signal: AbortSignal.timeout(timeout) });
 };
 
 /**
@@ -35,40 +82,30 @@ export const apiRequest = async <T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<ApiResponse<T>> => {
-  const url = `${API_BASE_URL}${endpoint}`;
-  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-
-  const headers = {
-    "Content-Type": "application/json",
-    ...options.headers,
-  } as Record<string, string>;
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
   try {
-    const response = await fetchWithTimeout(url, {
-      ...options,
-      headers,
+    const response = await axiosClient.request({
+      url: endpoint,
+      method: options.method as any,
+      data: options.body ? JSON.parse(options.body as string) : undefined,
+      headers: options.headers as any,
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.error || "An error occurred",
-        message: data.message,
-      };
-    }
-
+    const data = response.data;
     return {
       success: true,
       data: data.data || data,
       message: data.message,
     };
   } catch (error: any) {
+    const data = error?.response?.data;
+    if (data) {
+      return {
+        success: false,
+        error: data.error || data.detail || "An error occurred",
+        message: data.message,
+      };
+    }
+
     return {
       success: false,
       error: error.message || "Network error",
@@ -140,32 +177,17 @@ export const uploadFile = async <T>(
   endpoint: string,
   file: File,
 ): Promise<ApiResponse<T>> => {
-  const url = `${API_BASE_URL}${endpoint}`;
-  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-
   const formData = new FormData();
   formData.append("file", file);
 
-  const headers: HeadersInit = {};
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
   try {
-    const response = await fetchWithTimeout(url, {
-      method: "POST",
-      headers,
-      body: formData,
+    const response = await axiosClient.post(endpoint, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.error || "Upload failed",
-      };
-    }
+    const data = response.data;
 
     return {
       success: true,

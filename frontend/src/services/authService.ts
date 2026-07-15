@@ -1,4 +1,4 @@
-import { post, get, fetchWithTimeout } from "../lib/api";
+import { post, get, fetchWithTimeout, setAccessToken, getAccessToken } from "../lib/api";
 import type { User, AuthResponse, ApiResponse } from "../lib/types";
 import { API_BASE_URL, STORAGE_KEYS } from "../lib/constants";
 import { clearFarmerData } from "./farmerService";
@@ -46,7 +46,7 @@ export const loginUser = async (
   const tokenResponse = await post<{ access: string; refresh: string }>(
     "/auth/token/",
     {
-      username: email,
+      email,
       password,
     },
   );
@@ -118,16 +118,60 @@ export const registerUser = async (
  * Refresh authentication token
  */
 export const refreshToken = async (): Promise<ApiResponse<AuthResponse>> => {
-  return {
-    success: false,
-    error: "Refresh token flow is not implemented",
-  };
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/token/refresh/`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error || data.detail || "Refresh failed",
+      };
+    }
+
+    const token = data.access || data.data?.access;
+    if (token) {
+      saveAuthToken(token);
+    }
+
+    let currentUser = getCurrentUserFromStorage();
+    if (token && !currentUser) {
+      const profileResponse = await fetchCurrentUser(token);
+      if (profileResponse.success && profileResponse.data) {
+        currentUser = profileResponse.data;
+        saveCurrentUser(currentUser);
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        token: token || getAuthToken() || "",
+        user: currentUser as User,
+      },
+      message: "Token refreshed",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message || "Refresh failed",
+    };
+  }
 };
 
 /**
  * Logout user
  */
 export const logoutUser = async (): Promise<ApiResponse<void>> => {
+  await post<void>("/auth/logout/", {});
   clearAuthStorage();
   return {
     success: true,
@@ -170,15 +214,15 @@ export const validateEmail = async (
  * Local storage helpers
  */
 export const saveAuthToken = (token: string): void => {
-  localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+  setAccessToken(token);
 };
 
 export const getAuthToken = (): string | null => {
-  return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  return getAccessToken();
 };
 
 export const removeAuthToken = (): void => {
-  localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+  setAccessToken(null);
 };
 
 export const saveCurrentUser = (user: User): void => {

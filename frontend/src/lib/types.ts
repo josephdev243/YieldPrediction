@@ -3,7 +3,12 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: "farmer" | "operator" | "admin";
+  role: "farmer" | "extension_officer" | "admin";
+  phoneNumber?: string;
+  whatsappNumber?: string;
+  prefersEmailNotifications?: boolean;
+  prefersSmsNotifications?: boolean;
+  prefersWhatsappNotifications?: boolean;
   createdAt: Date;
 }
 
@@ -73,7 +78,10 @@ export type InputResourceType =
   | "fertilizer"
   | "pesticide"
   | "water"
-  | "seed";
+  | "seed"
+  | "herbicide"
+  | "irrigation"
+  | "labour";
 
 export type InputUsageUnit = "kg" | "liters" | "bags" | "m3";
 
@@ -81,12 +89,20 @@ export interface InputUsage {
   id: string;
   fieldId: string;
   fieldName?: string;
+  plantingId?: string;
+  plantingCrop?: string;
   season: string;
   seasonYear: number;
   resourceType: InputResourceType;
+  inputName?: string;
+  activeIngredient?: string;
   quantity: number;
   unit: InputUsageUnit;
+  irrigationMethod?: string;
+  durationMinutes?: number;
+  costPerUnit?: number;
   cost?: number;
+  totalCost?: number;
   applicationDate: Date;
   notes?: string;
   createdAt: Date;
@@ -111,6 +127,10 @@ export interface InputUsageSummary {
     entries: number;
     quantity: number;
     cost: number;
+    actual_yield_kg?: number;
+    predicted_yield_kg?: number;
+    cost_per_actual_yield_kg?: number | null;
+    cost_per_predicted_yield_kg?: number | null;
   };
 }
 
@@ -212,12 +232,15 @@ export interface IrrigationSchedule {
 // Recommendation Types
 export interface Recommendation {
   id: string;
+  farmId?: string;
   cropId: string;
   type: "watering" | "fertilizer" | "pest-control" | "harvesting" | "planting";
   title: string;
   description: string;
-  priority: "high" | "medium" | "low";
+  priority: "high" | "medium" | "low" | "critical";
   actionDate: Date;
+  isRead?: boolean;
+  isDismissed?: boolean;
   createdAt: Date;
 }
 

@@ -99,6 +99,24 @@ class OpenMeteoService:
         except requests.RequestException as e:
             logger.error(f"Error fetching historical data: {e}")
             return None
+
+    def extract_daily_rows(self, payload):
+        """Normalize Open-Meteo daily response into row dictionaries."""
+        if not payload:
+            return []
+
+        daily = payload.get('daily', {})
+        dates = daily.get('time', [])
+        rows = []
+        for index, day in enumerate(dates):
+            rows.append({
+                'date': day,
+                'temperature_min': (daily.get('temperature_2m_min') or [None])[index],
+                'temperature_max': (daily.get('temperature_2m_max') or [None])[index],
+                'rainfall_mm': (daily.get('precipitation_sum') or daily.get('precipitation') or [0])[index],
+                'wind_speed_kmh': (daily.get('windspeed_10m_max') or daily.get('windspeed_10m') or [0])[index],
+            })
+        return rows
     
     def get_forecast(self, latitude, longitude):
         """Fetch weather forecast."""
@@ -131,8 +149,7 @@ def update_farm_weather_data(farm_id):
             farm.coordinates.y, 
             farm.coordinates.x
         )
-        service.save_weather_data(farm, weather_data)
-        return True
+        return service.save_weather_data(farm, weather_data) is not None
     except Farm.DoesNotExist:
         logger.error(f"Farm {farm_id} not found")
         return False
