@@ -7,7 +7,12 @@ User = get_user_model()
 
 class Farm(models.Model):
     """Farm model - represents a farm owned by a user."""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='farm')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='farms')
+    extension_officers = models.ManyToManyField(
+        User,
+        related_name='assigned_farms',
+        blank=True,
+    )
     name = models.CharField(max_length=255)
     location = models.CharField(max_length=255)
     coordinates = models.PointField(geography=True, null=True, blank=True)  # GPS coordinates
@@ -22,7 +27,8 @@ class Farm(models.Model):
         verbose_name_plural = 'Farms'
     
     def __str__(self):
-        return f"{self.name} ({self.user.get_full_name()})"
+        owner_name = self.user.get_full_name() or self.user.email
+        return f"{self.name} ({owner_name})"
 
 
 class Field(models.Model):
@@ -143,7 +149,13 @@ class YieldPrediction(models.Model):
     """YieldPrediction model - stores ML-generated predictions."""
     planting = models.ForeignKey(CropPlanting, on_delete=models.CASCADE, related_name='predictions')
     predicted_yield_kg = models.FloatField(help_text="Predicted yield in kg")
+    predicted_yield_per_hectare = models.FloatField(
+        default=0,
+        help_text="Predicted yield per hectare in kg"
+    )
+    estimated_harvest_date = models.DateField(null=True, blank=True)
     confidence_score = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
+    feature_importance = models.JSONField(default=dict, blank=True)
     prediction_date = models.DateField(auto_now_add=True)
     model_version = models.CharField(max_length=50, default='v1.0')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -176,6 +188,7 @@ class Recommendation(models.Model):
     ], default='medium')
     action_required_by = models.DateField(null=True, blank=True)
     is_read = models.BooleanField(default=False)
+    is_dismissed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -192,8 +205,10 @@ class InputUsage(models.Model):
     """Tracks farming inputs used per field and season."""
     RESOURCE_FERTILIZER = 'fertilizer'
     RESOURCE_PESTICIDE = 'pesticide'
-    RESOURCE_WATER = 'water'
+    RESOURCE_HERBICIDE = 'herbicide'
+    RESOURCE_IRRIGATION = 'irrigation'
     RESOURCE_SEED = 'seed'
+    RESOURCE_LABOUR = 'labour'
 
     UNIT_KG = 'kg'
     UNIT_LITERS = 'liters'
@@ -203,8 +218,10 @@ class InputUsage(models.Model):
     RESOURCE_CHOICES = [
         (RESOURCE_FERTILIZER, 'Fertilizer'),
         (RESOURCE_PESTICIDE, 'Pesticide'),
-        (RESOURCE_WATER, 'Water'),
+        (RESOURCE_HERBICIDE, 'Herbicide'),
+        (RESOURCE_IRRIGATION, 'Irrigation'),
         (RESOURCE_SEED, 'Seed'),
+        (RESOURCE_LABOUR, 'Labour'),
     ]
 
     UNIT_CHOICES = [
@@ -215,12 +232,25 @@ class InputUsage(models.Model):
     ]
 
     field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='input_usages')
+    planting = models.ForeignKey(
+        CropPlanting,
+        on_delete=models.SET_NULL,
+        related_name='input_usages',
+        null=True,
+        blank=True,
+    )
     season = models.CharField(max_length=50, help_text='e.g. Long Rains, Dry Season')
     season_year = models.PositiveIntegerField()
     resource_type = models.CharField(max_length=20, choices=RESOURCE_CHOICES)
+    input_name = models.CharField(max_length=255, blank=True)
+    active_ingredient = models.CharField(max_length=255, blank=True)
     quantity = models.FloatField(validators=[MinValueValidator(0.0)])
     unit = models.CharField(max_length=20, choices=UNIT_CHOICES)
+    irrigation_method = models.CharField(max_length=100, blank=True)
+    duration_minutes = models.PositiveIntegerField(null=True, blank=True)
+    cost_per_unit = models.FloatField(validators=[MinValueValidator(0.0)], null=True, blank=True)
     cost = models.FloatField(validators=[MinValueValidator(0.0)], null=True, blank=True)
+    total_cost = models.FloatField(validators=[MinValueValidator(0.0)], null=True, blank=True)
     application_date = models.DateField()
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

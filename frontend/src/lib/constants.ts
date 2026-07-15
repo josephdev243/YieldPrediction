@@ -15,7 +15,7 @@ export const STORAGE_KEYS = {
 // User Roles
 export const USER_ROLES = {
   FARMER: "farmer",
-  OPERATOR: "operator",
+  EXTENSION_OFFICER: "extension_officer",
   ADMIN: "admin",
 };
 

@@ -12,7 +12,9 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 
-                  'phone_number', 'location', 'profile_picture', 'bio', 'created_at']
+                  'phone_number', 'whatsapp_number', 'location',
+                  'prefers_email_notifications', 'prefers_sms_notifications',
+                  'prefers_whatsapp_notifications', 'profile_picture', 'bio', 'created_at']
         read_only_fields = ['id', 'created_at']
 
 
@@ -24,7 +26,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'email', 'first_name', 'last_name', 'password', 
-                  'password_confirm', 'role', 'phone_number']
+                  'password_confirm', 'role', 'phone_number', 'whatsapp_number']
     
     def validate(self, data):
         if data['password'] != data.pop('password_confirm'):
@@ -33,7 +35,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         username = validated_data.pop('username', '') or validated_data['email']
-        user = User.objects.create_user(username=username, **validated_data)
+        user = User.objects.create_user(email=validated_data['email'], username=username, **validated_data)
         return user
 
 
@@ -54,8 +56,11 @@ class WeatherDataSerializer(serializers.ModelSerializer):
 class YieldPredictionSerializer(serializers.ModelSerializer):
     class Meta:
         model = YieldPrediction
-        fields = ['id', 'planting', 'predicted_yield_kg', 'confidence_score', 
-                  'prediction_date', 'model_version']
+        fields = [
+            'id', 'planting', 'predicted_yield_kg', 'predicted_yield_per_hectare',
+            'estimated_harvest_date', 'confidence_score', 'feature_importance',
+            'prediction_date', 'model_version'
+        ]
         read_only_fields = ['id', 'prediction_date']
 
 
@@ -93,12 +98,18 @@ class FarmSerializer(serializers.ModelSerializer):
     fields = FieldSerializer(many=True, read_only=True)
     weather_data = WeatherDataSerializer(many=True, read_only=True)
     user_details = UserSerializer(source='user', read_only=True)
+    extension_officer_ids = serializers.PrimaryKeyRelatedField(
+        source='extension_officers',
+        many=True,
+        queryset=User.objects.filter(role='extension_officer'),
+        required=False,
+    )
     
     class Meta:
         model = Farm
         fields = ['id', 'user', 'user_details', 'name', 'location', 'coordinates',
                   'total_area_hectares', 'soil_type', 'climate_zone', 'fields',
-                  'weather_data', 'created_at']
+                  'weather_data', 'extension_officer_ids', 'created_at']
         read_only_fields = ['id', 'user', 'created_at']
 
 
@@ -106,21 +117,44 @@ class RecommendationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recommendation
         fields = ['id', 'farm', 'category', 'title', 'description', 'priority',
-                  'action_required_by', 'is_read', 'created_at']
+                  'action_required_by', 'is_read', 'is_dismissed', 'created_at']
         read_only_fields = ['id', 'created_at']
 
 
 class InputUsageSerializer(serializers.ModelSerializer):
     field_name = serializers.CharField(source='field.name', read_only=True)
+    planting_crop = serializers.CharField(source='planting.crop.name', read_only=True)
 
     class Meta:
         model = InputUsage
         fields = [
-            'id', 'field', 'field_name', 'season', 'season_year', 'resource_type',
-            'quantity', 'unit', 'cost', 'application_date', 'notes',
+            'id', 'field', 'field_name', 'planting', 'planting_crop', 'season',
+            'season_year', 'resource_type', 'input_name', 'active_ingredient',
+            'quantity', 'unit', 'irrigation_method', 'duration_minutes',
+            'cost_per_unit', 'cost', 'total_cost', 'application_date', 'notes',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'field_name', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'field_name', 'planting_crop', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        field = attrs.get('field') or getattr(self.instance, 'field', None)
+        planting = attrs.get('planting') if 'planting' in attrs else getattr(self.instance, 'planting', None)
+
+        if planting and field and planting.field_id != field.id:
+            raise serializers.ValidationError({
+                'planting': 'Selected planting does not belong to the provided field.'
+            })
+
+        cost = attrs.get('cost') if 'cost' in attrs else getattr(self.instance, 'cost', None)
+        quantity = attrs.get('quantity') if 'quantity' in attrs else getattr(self.instance, 'quantity', None)
+        cost_per_unit = attrs.get('cost_per_unit') if 'cost_per_unit' in attrs else getattr(self.instance, 'cost_per_unit', None)
+
+        if cost is None and quantity is not None and cost_per_unit is not None:
+            attrs['cost'] = round(quantity * cost_per_unit, 2)
+        if attrs.get('cost') is not None:
+            attrs['total_cost'] = attrs['cost']
+
+        return attrs
 
 
 class PestDiseaseAlertSerializer(serializers.ModelSerializer):

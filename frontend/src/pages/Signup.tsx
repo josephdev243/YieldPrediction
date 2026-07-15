@@ -14,7 +14,7 @@ export const Signup: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [role, setRole] = useState<"farmer" | "operator" | "admin">("farmer");
+  const [role, setRole] = useState<"farmer" | "operator" | "extension_officer" | "admin">("farmer");
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,12 +122,13 @@ export const Signup: React.FC = () => {
                   <div className="relative">
                     <select
                       value={role}
-                      onChange={(e) => setRole(e.target.value as "farmer" | "operator" | "admin")}
+                      onChange={(e) => setRole(e.target.value as "farmer" | "operator" | "extension_officer" | "admin")}
                       className="w-full appearance-none rounded-xl border border-slate-200 bg-[#e6f1fb] px-4 py-2.5 pr-10 text-slate-900 outline-none transition focus:border-[#185fa5]"
                       disabled={isLoading}
                     >
                       <option value="farmer" className="text-slate-900">Farmer</option>
                       <option value="operator" className="text-slate-900">Operator</option>
+                      <option value="extension_officer" className="text-slate-900">Extension Officer</option>
                       <option value="admin" className="text-slate-900">Admin</option>
                     </select>
                     <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />

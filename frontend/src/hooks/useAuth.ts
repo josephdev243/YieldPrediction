@@ -3,8 +3,10 @@ import type { User } from "../lib/types";
 import {
   loginUser,
   registerUser,
+  logoutUser,
   getAuthToken,
   saveAuthToken,
+  refreshToken,
   clearAuthStorage,
   saveCurrentUser,
   getCurrentUserFromStorage,
@@ -44,8 +46,22 @@ export const useAuth = (): UseAuthReturn => {
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(storedUser);
+      setIsLoading(false);
+      return;
     }
-    setIsLoading(false);
+
+    const bootstrapSession = async () => {
+      const refreshed = await refreshToken();
+      if (refreshed.success && refreshed.data?.token) {
+        setToken(refreshed.data.token);
+        if (refreshed.data.user) {
+          setUser(refreshed.data.user);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    void bootstrapSession();
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -104,6 +120,7 @@ export const useAuth = (): UseAuthReturn => {
   );
 
   const logout = useCallback(() => {
+    void logoutUser();
     clearAuthStorage();
     setUser(null);
     setToken(null);
