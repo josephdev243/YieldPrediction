@@ -58,6 +58,8 @@ axiosClient.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${refreshedToken}`;
         return axiosClient(originalRequest);
       }
+
+      window.dispatchEvent(new CustomEvent("auth:session-expired"));
     }
 
     return Promise.reject(error);

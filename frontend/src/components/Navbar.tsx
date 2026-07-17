@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Leaf, Menu, MoonStar, SunMedium, X, LogOut } from "lucide-react";
 import { useAuthContext } from "../context/AuthContext";
 import { useThemeContext } from "../context/ThemeContext";
@@ -23,6 +23,7 @@ const authLinks = [
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuthContext();
   const { isDark, toggleTheme } = useThemeContext();
 
@@ -115,7 +116,10 @@ export function Navbar() {
                   Welcome, {user?.name || user?.email?.split("@")[0]}
                 </span>
                 <button
-                  onClick={logout}
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
                   className="flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
                 >
                   <LogOut size={16} />
@@ -189,6 +193,7 @@ export function Navbar() {
                     <button
                       onClick={() => {
                         logout();
+                        navigate("/");
                         setMobileOpen(false);
                       }}
                       className="flex-1 rounded-xl border border-white/15 px-4 py-2.5 text-center text-sm font-medium text-white transition hover:bg-white/10"

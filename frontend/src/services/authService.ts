@@ -87,6 +87,7 @@ export const registerUser = async (
   password: string,
   name: string,
   role: string,
+  phone?: string,
 ): Promise<ApiResponse<AuthResponse>> => {
   const registerResponse = await post<{ user: User; message: string }>(
     "/users/register/",
@@ -97,6 +98,7 @@ export const registerUser = async (
       password,
       password_confirm: password,
       role,
+      phone_number: phone,
     },
   );
 

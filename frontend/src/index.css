@@ -3,26 +3,28 @@
 @tailwind utilities;
 
 :root {
-  --surface-0: #08111e;
-  --surface-1: #0d1b2e;
-  --surface-2: #142236;
-  --color-forest-950: #020617;
-  --color-forest-900: #0b3d2e;
-  --color-forest-800: #14532d;
-  --color-forest-700: #166534;
-  --color-forest-600: #22c55e;
-  --color-forest-500: #4ade80;
-  --color-forest-100: #ecfdf5;
-  --color-forest-50: #f0fdf4;
-  --color-slate-900: #111827;
-  --color-slate-700: #374151;
-  --color-slate-500: #6b7280;
-  --color-slate-400: #9ca3af;
-  --color-slate-300: #d1d5db;
+  --ypf-primary: #2d6a4f;
+  --ypf-secondary: #52b788;
+  --ypf-accent: #95d5b2;
+  --ypf-surface: #f4f7f5;
+  --ypf-background: #ffffff;
+  --ypf-text-primary: #1b1b1b;
+  --ypf-text-secondary: #595959;
+  --ypf-alert: #e76f51;
+  --ypf-warning: #f4a261;
+  --ypf-weather: #3a86ff;
+  --ypf-input: #d4a373;
+  --ypf-border: #e5e7eb;
+  --ypf-success-soft: #eefaf3;
+  --ypf-weather-soft: #ebf4ff;
+  --ypf-warning-soft: #fff6ea;
+  --ypf-alert-soft: #fff1ed;
+  --ypf-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 html {
   scroll-behavior: smooth;
+  font-size: 16px;
 }
 
 body {
@@ -36,10 +38,159 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  background: var(--surface-0);
-  color: #ffffff;
+  background:
+    radial-gradient(circle at top left, rgba(82, 183, 136, 0.12), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #f4f7f5 100%);
+  color: var(--ypf-text-primary);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(82, 183, 136, 0.2);
+}
+
+@layer components {
+  .ypf-card {
+    @apply rounded-lg border border-gray-200 bg-white shadow-sm;
+    box-shadow: var(--ypf-shadow);
+  }
+
+  .ypf-surface {
+    background: var(--ypf-surface);
+  }
+
+  .ypf-page {
+    @apply min-h-screen text-[var(--ypf-text-primary)];
+  }
+
+  .ypf-kpi {
+    @apply flex h-full min-h-[148px] flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm;
+    box-shadow: var(--ypf-shadow);
+  }
+
+  .ypf-label {
+    @apply mb-2 block text-sm font-medium;
+    color: var(--ypf-text-primary);
+  }
+
+  .ypf-input {
+    @apply w-full rounded-lg border px-3 py-2 text-sm outline-none transition;
+    border-color: var(--ypf-border);
+    background: #fff;
+    color: var(--ypf-text-primary);
+  }
+
+  .ypf-input:focus {
+    border-color: var(--ypf-secondary);
+    box-shadow: 0 0 0 3px rgba(82, 183, 136, 0.16);
+  }
+
+  .ypf-button-primary {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60;
+    background: var(--ypf-primary);
+  }
+
+  .ypf-button-primary:hover {
+    background: #245842;
+  }
+
+  .ypf-button-secondary {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-lg border px-4 py-2 text-sm font-medium transition;
+    border-color: var(--ypf-border);
+    background: white;
+    color: var(--ypf-text-primary);
+  }
+
+  .ypf-badge-success {
+    background: rgba(82, 183, 136, 0.14);
+    color: var(--ypf-primary);
+  }
+
+  .ypf-badge-warning {
+    background: rgba(244, 162, 97, 0.16);
+    color: #9a5b11;
+  }
+
+  .ypf-badge-alert {
+    background: rgba(231, 111, 81, 0.16);
+    color: #a53c25;
+  }
+
+  .ypf-badge-neutral {
+    background: #edf0ee;
+    color: var(--ypf-text-secondary);
+  }
+
+  .ypf-table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .ypf-table thead th {
+    @apply sticky top-0 z-10 border-b border-gray-200 bg-white px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide;
+    color: var(--ypf-text-secondary);
+  }
+
+  .ypf-table tbody tr:nth-child(even) {
+    background: var(--ypf-surface);
+  }
+
+  .ypf-table tbody td {
+    @apply border-b border-gray-200 px-4 py-3 align-middle;
+  }
+
+  .ypf-table .right {
+    @apply text-right tabular-nums;
+  }
+
+  .ypf-alert-card {
+    @apply rounded-lg border border-gray-200 bg-white p-4 shadow-sm;
+    box-shadow: var(--ypf-shadow);
+    border-left-width: 4px;
+  }
+
+  .ypf-alert-high {
+    border-left-color: var(--ypf-alert);
+    background: #fff;
+  }
+
+  .ypf-alert-medium {
+    border-left-color: var(--ypf-warning);
+    background: #fff;
+  }
+
+  .ypf-weather-card {
+    @apply rounded-lg border border-gray-200 p-4 shadow-sm;
+    background: var(--ypf-weather-soft);
+    box-shadow: var(--ypf-shadow);
+  }
+
+  .ypf-section-title {
+    @apply text-[1.25rem] font-semibold leading-tight md:text-[1.5rem];
+  }
+
+  .ypf-metric-value {
+    @apply text-[1.75rem] font-bold leading-none md:text-[2rem];
+  }
 }

@@ -1,14 +1,19 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { useAuthContext } from "../context/AuthContext";
+import { useAppFlowContext } from "../context/AppFlowContext";
+import { hasCompletedOnboarding } from "../lib/appFlow";
 import { validateEmail } from "../lib/utils";
 
 /**
  * Login Page Component
  */
 export const Login: React.FC = () => {
-  const { login, isLoading, error, clearError } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { login, isLoading, error, clearError } = useAuthContext();
+  const { onboardingCompleted } = useAppFlowContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +36,18 @@ export const Login: React.FC = () => {
 
     try {
       await login(email, password);
-      window.location.href = "/dashboard";
+
+      const rawUser = localStorage.getItem("ypf_current_user");
+      const userId = rawUser ? JSON.parse(rawUser)?.id : null;
+      const completed = userId ? hasCompletedOnboarding(userId) : onboardingCompleted;
+      const returnTo = searchParams.get("returnTo");
+
+      if (!completed) {
+        navigate("/onboarding", { replace: true });
+        return;
+      }
+
+      navigate(returnTo || "/dashboard", { replace: true });
     } catch {
       // Handled by the auth hook.
     }

@@ -1,15 +1,18 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronDown, Eye, EyeOff } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { useAuthContext } from "../context/AuthContext";
 import { validateEmail } from "../lib/utils";
 
 /**
  * Signup Page Component
  */
 export const Signup: React.FC = () => {
-  const { register, isLoading, error, clearError } = useAuth();
+  const navigate = useNavigate();
+  const { register, isLoading, error, clearError } = useAuthContext();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -22,7 +25,7 @@ export const Signup: React.FC = () => {
     setValidationError(null);
     clearError();
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !phone || !password || !confirmPassword) {
       setValidationError("All fields are required");
       return;
     }
@@ -48,8 +51,8 @@ export const Signup: React.FC = () => {
     }
 
     try {
-      await register(email, password, name, role);
-      window.location.href = "/dashboard";
+      await register(email, password, name, role, phone);
+      navigate("/onboarding", { replace: true });
     } catch {
       // Handled by the auth hook.
     }
@@ -113,6 +116,18 @@ export const Signup: React.FC = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     className={fieldClass}
                     placeholder="your@email.com"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Phone</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className={fieldClass}
+                    placeholder="+254700000000"
                     disabled={isLoading}
                   />
                 </div>

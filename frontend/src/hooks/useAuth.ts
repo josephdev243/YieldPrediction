@@ -24,6 +24,7 @@ interface UseAuthReturn {
     password: string,
     name: string,
     role: string,
+    phone?: string,
   ) => Promise<void>;
   logout: () => void;
   clearError: () => void;
@@ -64,6 +65,19 @@ export const useAuth = (): UseAuthReturn => {
     void bootstrapSession();
   }, []);
 
+  useEffect(() => {
+    const onSessionExpired = () => {
+      clearAuthStorage();
+      setToken(null);
+      setUser(null);
+    };
+
+    window.addEventListener("auth:session-expired", onSessionExpired);
+    return () => {
+      window.removeEventListener("auth:session-expired", onSessionExpired);
+    };
+  }, []);
+
   const login = useCallback(async (email: string, password: string) => {
     try {
       setIsLoading(true);
@@ -90,13 +104,19 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, []);
 
-  const register = useCallback(
-    async (email: string, password: string, name: string, role: string) => {
+  const registerWithPhone = useCallback(
+    async (
+      email: string,
+      password: string,
+      name: string,
+      role: string,
+      phone?: string,
+    ) => {
       try {
         setIsLoading(true);
         setError(null);
 
-        const response = await registerUser(email, password, name, role);
+        const response = await registerUser(email, password, name, role, phone);
 
         if (!response.success || !response.data) {
           throw new Error(response.error || "Registration failed");
@@ -138,7 +158,7 @@ export const useAuth = (): UseAuthReturn => {
     isAuthenticated: !!token && !!user,
     error,
     login,
-    register,
+    register: registerWithPhone,
     logout,
     clearError,
   };
