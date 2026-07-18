@@ -35,7 +35,7 @@ export const Hero: React.FC = () => {
                 Get Started <ChevronRight size={20} />
               </Link>
               <button className="inline-flex w-fit items-center justify-center gap-3 rounded-lg border border-white/18 bg-transparent px-8 py-4 text-[1rem] font-medium text-white/95 transition hover:bg-white/10">
-                Watch Demo{" "}
+                Request Demo{" "}
                 <span className="grid h-5 w-5 place-items-center rounded-full border border-white/70 text-[0.62rem]">
                   ▶
                 </span>

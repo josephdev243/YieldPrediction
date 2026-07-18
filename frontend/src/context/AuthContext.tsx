@@ -15,6 +15,7 @@ interface AuthContextType {
     password: string,
     name: string,
     role: string,
+    phone?: string,
   ) => Promise<void>;
   logout: () => void;
   clearError: () => void;

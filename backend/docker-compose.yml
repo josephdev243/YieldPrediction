@@ -46,8 +46,8 @@ services:
       - DB_PASSWORD=postgres
       - DB_PORT=5432
       - DB_ENGINE=django.contrib.gis.db.backends.postgis
-      - CELERY_BROKER_URL=redis://redis:6380/0
-      - CELERY_RESULT_BACKEND=redis://redis:6380/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - GDAL_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgdal.so
       - GEOS_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgeos_c.so
     depends_on:
@@ -70,8 +70,8 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_PORT=5432
-      - CELERY_BROKER_URL=redis://redis:6380/0
-      - CELERY_RESULT_BACKEND=redis://redis:6380/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - GDAL_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgdal.so
       - GEOS_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgeos_c.so
     depends_on:
@@ -94,8 +94,8 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_PORT=5432
-      - CELERY_BROKER_URL=redis://redis:6380/0
-      - CELERY_RESULT_BACKEND=redis://redis:6380/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - GDAL_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgdal.so
       - GEOS_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgeos_c.so
     depends_on:
