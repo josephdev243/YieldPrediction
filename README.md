@@ -1,173 +1,339 @@
-# YPF - Yield Prediction & Farming
+# YPF (Yield Prediction & Farming)
 
-A modern web application for small-scale farmers to track crop yields, monitor weather patterns, and receive data-driven recommendations to optimize their farming practices.
+A full-stack smart farming platform that helps small-scale farmers monitor farm activities, track crop yields, analyze environmental conditions, and make data-driven decisions.
 
 ## Overview
 
-YPF empowers small-scale farmers with:
+YPF is a full-stack agricultural technology platform designed to support modern, efficient, and sustainable farming. It combines a React-based frontend with a Python/Django backend, weather services, predictive analytics, scheduled background tasks, and containerized deployment to give farmers actionable insights for better crop planning and yield management.
 
-- **Yield Tracking**: Record and monitor crop yields across different seasons and fields
-- **Weather Monitoring**: Real-time weather data and forecasts
-- **Predictive Analytics**: Data-driven insights to predict and optimize farming practices
-- **Smart Recommendations**: Personalized recommendations to improve farming outcomes
+The platform supports:
+
+- Farm and field management
+- Crop and planting tracking
+- Yield recording and analytics
+- Weather and climate monitoring
+- Yield prediction using machine learning
+- Personalized recommendations for farming decisions
+- User access, authentication, and dashboards
+
+## Subtitle
+
+A full-stack smart farming platform that uses data analytics, weather insights, and predictive technology to help small-scale farmers improve crop yields and make informed agricultural decisions.
 
 ## Tech Stack
 
-- **Frontend Framework**: React 19 with TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **UI Icons**: Lucide React
+### Frontend
+- React 19 + TypeScript
+- Vite
+- Tailwind CSS
+- React Router
+- Recharts and Leaflet for dashboards and mapping
+- Axios and React Query for API integration
 
-## Getting Started
+### Backend
+- Python
+- Django
+- Django REST Framework
+- PostgreSQL with PostGIS
+- Redis
+- Celery + Celery Beat
+- JWT authentication
 
-### Prerequisites
+### Infrastructure and DevOps
+- Docker
+- Docker Compose
+- Gunicorn
+- Environment-based configuration
 
-- Node.js (v16 or higher)
-- npm or yarn
+## System Architecture
 
-### Installation
-
-1. Install dependencies:
-
-```bash
-npm install
+```text
+Frontend (React + Vite + Tailwind)
+        |
+        v
+REST API (Django REST Framework)
+        |
+   +----+--------------------------+
+   |                                |
+   v                                v
+PostgreSQL/PostGIS              Redis + Celery
+   |                                |
+   |                                v
+   |                         Background tasks
+   |                                |
+   +------------------+-------------+
+                      |
+                      v
+                Weather APIs / ML services
 ```
 
-2. Start the development server:
+The architecture combines a user-facing dashboard with secure API services, a relational geospatial database, asynchronous task processing, and predictive logic to support smarter agricultural decision-making.
 
-```bash
-npm run dev
-```
+## Core Features
 
-The application will be available at `http://localhost:5173`
+- Farm and field tracking for growers and farm operators
+- Crop lifecycle and planting records
+- Yield analytics and trend monitoring
+- Weather data retrieval and forecast monitoring
+- Recommendation generation based on crop and field conditions
+- Machine learning-based yield predictions
+- Admin dashboard for managing core agricultural data
+- REST API built for frontend integration
+
+## API Features
+
+The backend exposes REST endpoints for:
+
+- Authentication and user management
+- Farm and field creation and updates
+- Crop catalog and planting records
+- Yield entry and analytics
+- Weather retrieval and forecasting
+- Prediction generation
+- Recommendations and notifications
+
+## Machine Learning / Prediction Features
+
+The backend includes predictive components built around:
+
+- Weather and soil-related features
+- Crop growth and seasonal data
+- Yield forecasting logic
+- Model-based prediction outputs with confidence scoring
+- Scheduled prediction tasks via Celery
 
 ## Project Structure
 
+```text
+YieldPrediction/
+├── README.md
+├── backend/
+│   ├── .env
+│   ├── .env.example
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── manage.py
+│   ├── requirements.txt
+│   ├── entrypoint.sh
+│   ├── ARCHITECTURE.md
+│   ├── SETUP_GUIDE.md
+│   ├── README.md
+│   ├── celerybeat-schedule
+│   └── ypf_backend/
+│       ├── __init__.py
+│       ├── asgi.py
+│       ├── celery.py
+│       ├── settings.py
+│       ├── urls.py
+│       ├── wsgi.py
+│       ├── api/
+│       ├── core/
+│       ├── farms/
+│       ├── users/
+│       └── utils/
+└── frontend/
+    ├── package.json
+    ├── vite.config.ts
+    ├── tailwind.config.js
+    ├── index.html
+    └── src/
 ```
-src/
-├── App.tsx           # Main application component with all page sections
-├── App.css          # Minimal CSS (styling via Tailwind utility classes)
-├── main.tsx         # React entry point
-├── index.css        # Tailwind CSS directives
-└── assets/          # Images and static files
+
+## Prerequisites
+
+Before running the project, make sure you have:
+
+- Node.js 18+ and npm
+- Python 3.10+
+- PostgreSQL 16 with PostGIS enabled
+- Redis
+- Docker and Docker Compose (optional, for containerized setup)
+- Git
+
+## Installation
+
+### 1. Clone the repository
+
+```bash
+git clone <repository-url>
+cd YieldPrediction
 ```
 
-## Available Scripts
+### 2. Frontend setup
 
-- `npm run dev` - Start the development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview the production build
-- `npm run lint` - Run ESLint
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Features
+The frontend runs at:
 
-### Landing Page
+- http://localhost:5173
 
-- **Header**: Navigation menu with responsive mobile menu
-- **Hero Section**: Compelling headline with dashboard preview
-- **Features Section**: 4 main features with descriptions
-- **Statistics**: Key metrics showing platform impact
-- **Footer**: Company information and links
+### 3. Backend setup
 
-### Dashboard Preview
+From the project root:
 
-- Total Yield tracker
-- Active Crops counter
-- Total Fields display
-- Rainfall metrics
-- Yield Trend chart
-- Weather Overview
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+```
 
-## Color Scheme
+Edit the backend `.env` file and configure your database keys, API keys, and secret values.
 
-The application uses a green color palette to reflect the agricultural nature:
+### 4. Database setup
 
-- **Primary Green**: `bg-green-600`, `bg-green-500`
-- **Dark Green**: `bg-green-900`, `bg-green-800`
-- **Light Green**: `bg-green-100`, `bg-green-300`
+Create PostgreSQL/PostGIS database and enable the PostGIS extension:
 
-## Responsive Design
+```bash
+createdb yieldprediction_db
+psql -U postgres yieldprediction_db -c "CREATE EXTENSION postgis;"
+```
 
-The application is fully responsive and works on:
+If needed, update the database settings in your `.env` file to match your local environment.
 
-- Desktop (1024px and up)
-- Tablet (768px - 1023px)
-- Mobile (< 768px)
+### 5. Run Django migrations
+
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+### 6. Start the backend services
+
+In one terminal:
+
+```bash
+python manage.py runserver 0.0.0.0:8000
+```
+
+In another terminal:
+
+```bash
+celery -A ypf_backend worker -l info
+```
+
+In a third terminal:
+
+```bash
+celery -A ypf_backend beat -l info
+```
+
+The backend API is available at:
+
+- http://localhost:8000/api/
+- Admin panel: http://localhost:8000/admin/
+
+### 7. Optional: Docker setup
+
+From the backend folder:
+
+```bash
+docker compose up --build
+```
+
+This starts the PostgreSQL, Redis, Django app, and Celery services together.
+
+## Environment Variables
+
+The project uses environment-based configuration for secrets and integrations. The backend includes a sample file at `backend/.env.example`.
+
+Typical variables include:
+
+```env
+DEBUG=True
+SECRET_KEY=your-secret-key
+ALLOWED_HOSTS=localhost,127.0.0.1
+FRONTEND_URL=http://localhost:5173
+DB_NAME=yieldprediction_db
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_HOST=postgis
+DB_PORT=5432
+OPENWEATHER_API_KEY=your_openweather_key
+REDIS_URL=redis://redis:6379/0
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/0
+```
+
+Additional variables may be required for email, SMS, or cloud storage integrations.
+
+## Docker Setup
+
+The repository includes Docker configuration for local development and service orchestration:
+
+```bash
+cd backend
+docker compose up --build
+```
+
+The Docker stack includes:
+
+- PostgreSQL + PostGIS
+- Redis
+- Django application
+- Celery worker
+- Celery Beat scheduler
+
+## Development Workflow
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+npm run build
+npm run lint
+```
+
+### Backend
+
+```bash
+cd backend
+source .venv/bin/activate
+python manage.py makemigrations
+python manage.py migrate
+python manage.py test
+python manage.py runserver 0.0.0.0:8000
+```
 
 ## Future Enhancements
 
-- User authentication and accounts
-- Real crop yield input forms
-- Integration with weather APIs
-- Predictive analytics dashboard
-- Mobile app version
+The project already includes key predictive and backend capabilities, and future improvements may include:
+
+- Expanded farm analytics and reporting
+- More advanced ML models for crop yield forecasting
+- Improved recommendation engine personalization
+- Mobile app support
 - Multi-language support
+- Integration with more climate and satellite data services
+- Enhanced farmer alerting and outreach systems
+
+## Contributing
+
+Contributions are welcome. To contribute:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run the relevant tests or validation
+5. Open a pull request with a clear description
 
 ## License
 
-MIT License
+This project is licensed under the MIT License.
 
-## React Compiler
+## Additional Documentation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+For more detailed setup and architecture notes, see:
 
-## Expanding the ESLint configuration
+- `backend/README.md`
+- `backend/SETUP_GUIDE.md`
+- `backend/ARCHITECTURE.md`
+- `backend/COMPLETION_SUMMARY.md`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
-
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
-```
