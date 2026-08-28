@@ -34,8 +34,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
-        username = validated_data.pop('username', '') or validated_data['email']
-        user = User.objects.create_user(email=validated_data['email'], username=username, **validated_data)
+        # Pop email and username so they are not duplicated when passed as kwargs
+        email = validated_data.pop('email')
+        username = validated_data.pop('username', '') or email
+        user = User.objects.create_user(email=email, username=username, **validated_data)
         return user
 
 

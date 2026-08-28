@@ -12,7 +12,7 @@ export function Footer({ setPage = () => {} }: FooterProps): React.JSX.Element {
     background: "none",
     border: "none",
     cursor: "pointer",
-    color: "#d1d5db",
+    color: "#166534",
     fontSize: 14,
     textAlign: "left",
     padding: 0,
@@ -87,7 +87,7 @@ export function Footer({ setPage = () => {} }: FooterProps): React.JSX.Element {
               <div>
                 <div
                   style={{
-                    color: "white",
+                    color: "#166534",
                     fontWeight: 500,
                     fontSize: 18,
                     lineHeight: 1,
@@ -102,7 +102,7 @@ export function Footer({ setPage = () => {} }: FooterProps): React.JSX.Element {
             </div>
             <p
               style={{
-                color: "#9CA3AF",
+                color: "#166534",
                 fontSize: 14,
                 lineHeight: 1.7,
                 maxWidth: 240,
@@ -140,7 +140,7 @@ export function Footer({ setPage = () => {} }: FooterProps): React.JSX.Element {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <p
               style={{
-                color: "white",
+                color: "#166534",
                 fontWeight: 700,
                 fontSize: 15,
                 marginBottom: 4,
@@ -170,7 +170,7 @@ export function Footer({ setPage = () => {} }: FooterProps): React.JSX.Element {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <p
               style={{
-                color: "white",
+                color: "#166534",
                 fontWeight: 700,
                 fontSize: 15,
                 marginBottom: 4,
@@ -200,7 +200,7 @@ export function Footer({ setPage = () => {} }: FooterProps): React.JSX.Element {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <p
               style={{
-                color: "white",
+                color: "#166534",
                 fontWeight: 700,
                 fontSize: 15,
                 marginBottom: 4,
@@ -217,7 +217,7 @@ export function Footer({ setPage = () => {} }: FooterProps): React.JSX.Element {
               <div key={text} style={{ display: "flex", gap: 10 }}>
                 <span style={{ fontSize: 14 }}>{icon}</span>
                 <span
-                  style={{ color: "#9CA3AF", fontSize: 13, lineHeight: 1.5 }}
+                  style={{ color: "#166534", fontSize: 13, lineHeight: 1.5 }}
                 >
                   {text}
                 </span>
@@ -228,7 +228,7 @@ export function Footer({ setPage = () => {} }: FooterProps): React.JSX.Element {
           <div>
             <p
               style={{
-                color: "white",
+                color: "#166534",
                 fontWeight: 700,
                 fontSize: 15,
                 marginBottom: 8,
@@ -238,7 +238,7 @@ export function Footer({ setPage = () => {} }: FooterProps): React.JSX.Element {
             </p>
             <p
               style={{
-                color: "#9CA3AF",
+                color: "#166534",
                 fontSize: 13,
                 lineHeight: 1.6,
                 marginBottom: 16,
@@ -255,7 +255,7 @@ export function Footer({ setPage = () => {} }: FooterProps): React.JSX.Element {
                 borderRadius: 8,
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(74,222,128,0.2)",
-                color: "white",
+                color: "#166534",
                 fontSize: 13,
                 outline: "none",
                 fontFamily: "'DM Sans',sans-serif",

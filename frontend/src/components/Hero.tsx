@@ -14,7 +14,7 @@ export const Hero: React.FC = () => {
 
       <div className="mx-auto max-w-[1152px] relative z-10">
         <div className="grid items-center gap-8 lg:grid-cols-[0.86fr_1.32fr] lg:gap-7">
-          <div className="max-w-[450px] text-white lg:pt-2">
+          <div className="max-w-[450px] text-[#166534] lg:pt-2">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#14532d]/90 px-4 py-2 text-[0.92rem] font-medium text-white shadow-[0_10px_25px_rgba(0,0,0,0.18)] ring-1 ring-white/10">
               <Leaf size={18} className="text-[#4ade80]" />
               <span>Powering Sustainable Agriculture</span>
@@ -23,7 +23,7 @@ export const Hero: React.FC = () => {
               Smart Farming
               <span className="block text-[#4ade80]">Starts Here</span>
             </h1>
-            <p className="mt-6 max-w-[430px] text-[1.02rem] leading-8 text-[#d1d5db]">
+            <p className="mt-6 max-w-[430px] text-[1.02rem] leading-8 text-[#166534]">
               Empower your farming with data-driven insights. Track yields,
               monitor weather, and optimize your crops for maximum productivity.
             </p>
@@ -34,8 +34,8 @@ export const Hero: React.FC = () => {
               >
                 Get Started <ChevronRight size={20} />
               </Link>
-              <button className="inline-flex w-fit items-center justify-center gap-3 rounded-lg border border-white/18 bg-transparent px-8 py-4 text-[1rem] font-medium text-white/95 transition hover:bg-white/10">
-                Request Demo{" "}
+              <button className="inline-flex w-fit items-center justify-center gap-3 rounded-lg bg-[#4ade80] px-8 py-4 text-[1rem] font-medium text-[#052e16] shadow-[0_12px_24px_rgba(74,222,128,0.16)] transition hover:bg-[#86efac]">
+                Request Demo {" "}
                 <span className="grid h-5 w-5 place-items-center rounded-full border border-white/70 text-[0.62rem]">
                   ▶
                 </span>
@@ -56,7 +56,7 @@ export const Hero: React.FC = () => {
                   👨
                 </div>
               </div>
-              <div className="text-[0.9rem] leading-6 text-[#d1d5db]">
+              <div className="text-[0.9rem] leading-6 text-[#166534]">
                 <p>Trusted by 5,000+ farmers</p>
                 <p>across the region</p>
               </div>

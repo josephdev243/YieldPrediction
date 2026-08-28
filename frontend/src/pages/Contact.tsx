@@ -70,6 +70,7 @@ export function Contact() {
     window.open("https://maps.google.com/?q=Westlands+Nairobi+Kenya", "_blank");
   };
 
+
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "12px 16px",
@@ -163,6 +164,8 @@ export function Contact() {
           </svg>
         </div>
       </section>
+
+      
 
       {/* Contact Cards */}
       <section
